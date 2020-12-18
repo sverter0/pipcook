@@ -67,6 +67,8 @@ export class Tracer {
   private stderr: LogPassthrough;
   // event emitter for pipcook event
   private dispatcher: EventEmitter;
+  // waiter for all the logs end
+  private waiterForEnd: Promise<void[]>;
 
   constructor(opts?: TraceOptions) {
     this.id = generateId();
@@ -97,13 +99,17 @@ export class Tracer {
       logger.on('data', data => {
         cb(new LogEvent(level, data));
       });
-      logger.on('close', () => this.dispatcher.emit('trace-finished'));
       logger.on('error', err => {
         cb(new LogEvent('error', err.message));
       });
     };
     pipeLog('info', this.stdout);
     pipeLog('warn', this.stderr);
+    const ends = [
+      new Promise<void>((resolve) => this.stdout.on('close', resolve)),
+      new Promise<void>((resolve) => this.stderr.on('close', resolve))
+    ];
+    this.waiterForEnd = Promise.all(ends);
   }
 
   /**
@@ -117,10 +123,8 @@ export class Tracer {
   /**
    * wait for end
    */
-  async wait() {
-    return new Promise((resolve) => {
-      this.dispatcher.on('trace-finished', resolve);
-    });
+  async wait(): Promise<void[]> {
+    return this.waiterForEnd;
   }
 
   /**
@@ -209,23 +213,26 @@ export class LogPassthrough extends Transform {
   async finish(err?: Error) {
     return new Promise<void>((resolve) => {
       this.end();
-      // make sure someone handles the error, otherwise the process will exit
-      if (err && this.listeners('error').length > 0) {
-        this.destroy(err);
-      } else {
-        if (err) {
-          console.error(`unhandled error from log: ${err.message}`);
+      const destoryAndResolve = () => {
+        // make sure someone handles the error, otherwise the process will exit
+        if (err && this.listeners('error').length > 0) {
+          this.destroy(err);
+        } else {
+          if (err) {
+            console.error(`unhandled error from log: ${err.message}`);
+          }
+          this.destroy();
         }
-        this.destroy();
+        resolve();
       }
       if (this.fileStream) {
         this.fileStream.on('close', () => {
           this.fileStream.close();
-          resolve();
+          destoryAndResolve();
         });
         this.fileStream.end();
       } else {
-        resolve();
+        destoryAndResolve();
       }
     });
   }
