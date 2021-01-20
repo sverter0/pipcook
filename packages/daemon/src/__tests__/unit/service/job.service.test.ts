@@ -15,6 +15,8 @@ import { Tracer } from '../../../services';
 import { Job, Pipeline } from '../../../models';
 // import * as JobRunner from '../../../job-runner';
 import { mockFunctionFromGetter } from '../../__helpers__';
+import * as tvmGen from '../../../generator/tvm';
+import * as nodeGen from '../../../generator/nodejs';
 
 function initJobService(): {
   pluginRepository: StubbedInstanceWithSinonAccessor<PluginRepository>,
@@ -110,8 +112,10 @@ test.serial('generate output', async (t) => {
   const mockFsEnsureDir = sinon.stub(fs, 'ensureDir').resolves(true);
   const mockFsReadJson = sinon.stub(fs, 'readJSON').resolves({});
   const mockFsCopy = sinon.stub(fs, 'copy').resolves(true);
-  const mockFsOutputJson = sinon.stub(fs, 'outputJSON').resolves({ });
   const mockFsCompressTarFile = mockFunctionFromGetter(core, 'compressTarFile').resolves();
+
+  const mockTVMGenerator = sinon.stub(tvmGen, 'generateTVM').resolves();
+  const mockNodeGenerator = sinon.stub(nodeGen, 'generateNode').resolves();
 
   await jobService.generateOutput({ id: 'mockId' } as Job, {
     modelPath: 'mockPath',
@@ -130,7 +134,8 @@ test.serial('generate output', async (t) => {
   t.true(mockFsEnsureDir.calledOnceWith('/home/output'), 'check mockFsEnsureDir');
   t.true(mockFsReadJson.called, 'check mockFsReadJson');
   t.true(mockFsCopy.called, 'check mockFsCopy');
-  t.true(mockFsOutputJson.called, 'check mockFsOutputJson');
+  t.true(mockTVMGenerator.called, 'check TVMGenerator');
+  t.true(mockNodeGenerator.called, 'check NodeGenerator');
   t.true(mockFsCompressTarFile.calledOnceWith('/home/output', '/home/output.tar.gz'), 'check mockFsCompressTarFile');
 });
 

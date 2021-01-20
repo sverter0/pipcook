@@ -10,7 +10,13 @@ export function generateTVM(dist: string, projPackage: any, opts: GenerateOption
       opts
     }), 'keras' ]);
 
-    client.on('message', () => resolve({}));
-    client.on('error', (e) => reject(e));
+    client.on('message', (msg) => {
+      if (msg === 1) {
+        resolve({});
+      } else {
+        reject('Internal Error');
+      }
+    });
+    client.on('error', reject);
   });
 }
