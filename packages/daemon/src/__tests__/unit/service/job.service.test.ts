@@ -17,6 +17,7 @@ import { Job, Pipeline } from '../../../models';
 import { mockFunctionFromGetter } from '../../__helpers__';
 import * as tvmGen from '../../../generator/tvm';
 import * as nodeGen from '../../../generator/nodejs';
+import * as os from 'os';
 
 function initJobService(): {
   pluginRepository: StubbedInstanceWithSinonAccessor<PluginRepository>,
@@ -134,7 +135,12 @@ test.serial('generate output', async (t) => {
   t.true(mockFsEnsureDir.calledOnceWith('/home/output'), 'check mockFsEnsureDir');
   t.true(mockFsReadJson.called, 'check mockFsReadJson');
   t.true(mockFsCopy.called, 'check mockFsCopy');
-  t.true(mockTVMGenerator.called, 'check TVMGenerator');
+  if (os.platform() === 'darwin' || os.platform() === 'win32') {
+    t.true(mockTVMGenerator.called, 'check TVMGenerator');
+  } else {
+    t.false(mockTVMGenerator.called, 'check TVMGenerator');
+  }
+  
   t.true(mockNodeGenerator.called, 'check NodeGenerator');
   t.true(mockFsCompressTarFile.calledOnceWith('/home/output', '/home/output.tar.gz'), 'check mockFsCompressTarFile');
 });

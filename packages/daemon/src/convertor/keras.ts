@@ -32,9 +32,7 @@ export async function keras2wasm(dist: string, projPackage: any, opts: GenerateO
   }));
 
   lib.save(path.join(dist, 'wasm', 'model.bc'));
-  console.log(fileQueue)
   fileQueue.push(fs.writeFile(path.join(dist, 'wasm', 'modelDesc.json'), graph));
-  console.log(fileQueue)
   const paramWriter = open(path.join(dist, 'wasm', 'modelParams.parmas'), 'wb');
   // @ts-ignore
   paramWriter.write(relay.save_param_dict(param));
