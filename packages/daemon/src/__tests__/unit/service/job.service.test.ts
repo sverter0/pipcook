@@ -114,7 +114,7 @@ test.serial('generate output', async (t) => {
   const mockFsReadJson = sinon.stub(fs, 'readJSON').resolves({});
   const mockFsCopy = sinon.stub(fs, 'copy').resolves(true);
   const mockFsCompressTarFile = mockFunctionFromGetter(core, 'compressTarFile').resolves();
-
+  const mockPlatform = sinon.stub(os, 'platform').returns('darwin');
   const mockTVMGenerator = sinon.stub(tvmGen, 'generateTVM').resolves();
   const mockNodeGenerator = sinon.stub(nodeGen, 'generateNode').resolves();
 
@@ -131,17 +131,14 @@ test.serial('generate output', async (t) => {
     workingDir: '/home',
     template: 'mock template'
   });
+
   t.true(mockFsRemove.calledOnceWith('/home/output'), 'check mockFsRemove');
   t.true(mockFsEnsureDir.calledOnceWith('/home/output'), 'check mockFsEnsureDir');
   t.true(mockFsReadJson.called, 'check mockFsReadJson');
   t.true(mockFsCopy.called, 'check mockFsCopy');
-  if (os.platform() === 'darwin' || os.platform() === 'win32') {
-    t.true(mockTVMGenerator.called, 'check TVMGenerator');
-  } else {
-    t.false(mockTVMGenerator.called, 'check TVMGenerator');
-  }
-
+  t.true(mockTVMGenerator.called, 'check TVMGenerator');
   t.true(mockNodeGenerator.called, 'check NodeGenerator');
+  t.true(mockPlatform.called, 'check platform');
   t.true(mockFsCompressTarFile.calledOnceWith('/home/output', '/home/output.tar.gz'), 'check mockFsCompressTarFile');
 });
 
