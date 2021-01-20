@@ -140,7 +140,7 @@ test.serial('generate output', async (t) => {
   } else {
     t.false(mockTVMGenerator.called, 'check TVMGenerator');
   }
-  
+
   t.true(mockNodeGenerator.called, 'check NodeGenerator');
   t.true(mockFsCompressTarFile.calledOnceWith('/home/output', '/home/output.tar.gz'), 'check mockFsCompressTarFile');
 });
